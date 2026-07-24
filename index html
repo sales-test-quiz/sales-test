@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>業務六角能力診斷測驗</title>
+    <style>
+        :root {
+            --primary: #0984e3;
+            --primary-hover: #74b9ff;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-light: #636e72;
+        }
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            max-width: 650px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .question-box {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .question-box.active {
+            display: block;
+        }
+        .q-title {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        button.option-btn {
+            padding: 14px 18px;
+            border: 2px solid #edf2f7;
+            background: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            text-align: left;
+            color: var(--text-main);
+        }
+        button.option-btn:hover {
+            border-color: var(--primary);
+            background: #e1f5fe;
+            transform: translateY(-2px);
+        }
+        #result-box {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .result-title {
+            font-size: 22px;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 15px 0 20px 0;
+            text-align: center;
+        }
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .score-card {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .score-name { font-size: 14px; font-weight: bold; color: var(--text-main); }
+        .score-val { font-size: 16px; font-weight: bold; color: var(--primary); }
+        .result-desc {
+            font-size: 15px;
+            color: var(--text-main);
+            line-height: 1.6;
+            margin-bottom: 30px;
+            background: #f1f2f6;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .progress {
+            font-size: 14px;
+            color: var(--text-light);
+            text-align: right;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            font-weight: bold;
+        }
+        .btn-main:hover {
+            background: var(--primary-hover);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 起始畫面 -->
+    <div id="intro">
+        <h1>業務六角能力診斷測驗</h1>
+        <p class="subtitle">本測驗共 12 題，評估你的：開發拓展、需求洞察、價值傳遞、抗壓應變、成交促成與客情深耕等 6 大核心業務能力。</p>
+        <button class="btn-main" onclick="startTest()">開始診斷</button>
+    </div>
+
+    <!-- 測驗區域 -->
+    <div id="quiz-area" style="display: none;">
+        <div class="progress" id="progress">1 / 12</div>
+        <div id="question-container"></div>
+    </div>
+
+    <!-- 結果區域 -->
+    <div id="result-box">
+        <h2 style="text-align: center; margin: 0;">業務診斷報告</h2>
+        <div class="result-title" id="result-type"></div>
+        
+        <div class="score-grid" id="score-grid"></div>
+
+        <div class="result-desc" id="result-desc"></div>
+        <button class="btn-main" onclick="location.reload()">重新測驗</button>
+    </div>
+</div>
+
+<script>
+    // 確切修改完成的 12 題
+    const questions = [
+        { dim: "hunting", q: "1. 面對尚未合作的潛在客戶，我能尋找拜訪機會並爭取合作。" },
+        { dim: "hunting", q: "2. 我積極推動新客戶的合作流程，並能持續拓展未覆蓋的市場。" },
+        { dim: "insight", q: "3. 拜訪時，我能精準問出客戶在產品使用或業務流程上的實質痛點。" },
+        { dim: "insight", q: "4. 我能敏銳察覺客戶對競品的不滿（如：操作不順、效益不佳、價格過高），並找出切入替換的契機。" },
+        { dim: "value", q: "5. 我能用簡明且具說服力的方式，向客戶說明產品優勢與關鍵差異。" },
+        { dim: "hunting", q: "6. 面對完全不認識的潛在客戶我能毫不猶豫地主動搭訕或發起聯繫" },
+        { dim: "resilience", q: "7. 面對客戶態度冷淡、拒絕、甚至專案被刷掉時，我能迅速調整心態，持續跟進。" },
+        { dim: "resilience", q: "8. 面對突發緊急狀況或客戶臨時急件，我能保持冷靜並快速解決問題。" },
+        { dim: "closing", q: "9. 當客戶大幅砍價或對換用新產品猶豫不決時，我能化解疑慮並促成合約簽署或試用。" },
+        { dim: "hunting", q: "10. 我享受從零開始開拓新市場或找尋新名單的過程 並能持續多元的開發管道" },
+        { dim: "farming", q: "11. 我會定期主動關心客戶使用狀況與協助維護，確保服務質量與長期合作。" },
+        { dim: "farming", q: "12. 我與客戶關鍵決策者建立極佳信任，讓他們願意主動幫我向其他人熱情轉介紹。" }
+    ];
+
+    const optionLabels = [
+        { text: "1 分 - 非常不符合 / 極不擅長", score: 1 },
+        { text: "2 分 - 不太符合", score: 2 },
+        { text: "3 分 - 普通 / 視情況而定", score: 3 },
+        { text: "4 分 - 還算符合", score: 4 },
+        { text: "5 分 - 非常符合 / 極度擅長", score: 5 }
+    ];
+
+    let currentQuestionIndex = 0;
+    let scores = {
+        hunting: 0,
+        insight: 0,
+        value: 0,
+        resilience: 0,
+        closing: 0,
+        farming: 0
+    };
+
+    function startTest() {
+        document.getElementById('intro').style.display = 'none';
+        document.getElementById('quiz-area').style.display = 'block';
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const container = document.getElementById('question-container');
+        container.innerHTML = '';
+        document.getElementById('progress').innerText = `${currentQuestionIndex + 1} / ${questions.length}`;
+
+        const qData = questions[currentQuestionIndex];
+        const qBox = document.createElement('div');
+        qBox.className = 'question-box active';
+        
+        const qTitle = document.createElement('div');
+        qTitle.className = 'q-title';
+        qTitle.innerText = qData.q;
+        qBox.appendChild(qTitle);
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'options';
+
+        optionLabels.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt.text;
+            btn.onclick = () => selectOption(qData.dim, opt.score);
+            optionsDiv.appendChild(btn);
+        });
+
+        qBox.appendChild(optionsDiv);
+        container.appendChild(qBox);
+    }
+
+    function selectOption(dim, score) {
+        scores[dim] += score;
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex < questions.length) {
+            renderQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('result-box').style.display = 'block';
+
+        const scoreGrid = document.getElementById('score-grid');
+        scoreGrid.innerHTML = `
+            <div class="score-card"><span class="score-name">🎯 開發拓展力</span><span class="score-val">${scores.hunting} / 20</span></div>
+            <div class="score-card"><span class="score-name">💡 需求洞察力</span><span class="score-val">${scores.insight} / 10</span></div>
+            <div class="score-card"><span class="score-name">📢 價值傳遞力</span><span class="score-val">${scores.value} / 5</span></div>
+            <div class="score-card"><span class="score-name">🛡️ 抗壓應變力</span><span class="score-val">${scores.resilience} / 10</span></div>
+            <div class="score-card"><span class="score-name">🤝 成交促成力</span><span class="score-val">${scores.closing} / 5</span></div>
+            <div class="score-card"><span class="score-name">🌱 客情深耕力</span><span class="score-val">${scores.farming} / 10</span></div>
+        `;
+
+        let maxDim = "hunting";
+        let maxScore = -1;
+        for (let dim in scores) {
+            if (scores[dim] > maxScore) {
+                maxScore = scores[dim];
+                maxDim = dim;
+            }
+        }
+
+        let typeName = "";
+        let desc = "";
+
+        if (maxDim === "hunting" || maxDim === "resilience") {
+            typeName = "🏹 攻無不克【拓荒獵人型】";
+            desc = "<b>你的優勢：衝勁十足、不怕被拒絕、拓展新市場與名單的能力極強。</b><br><br>你具備極強的拓荒精神與開發執行力。建議未來可同步加強「客情維護與細節經營」，讓新客戶成交後能轉化為長期穩定的業績來源！";
+        } else if (maxDim === "farming" || maxDim === "insight") {
+            typeName = "🌾 信任深耕【深耕農夫型】";
+            desc = "<b>你的優勢：同理心強、洞察細緻、與客戶關係非常穩固。</b><br><br>你把服務與客戶關係做得很到位，是客戶最信賴的合作夥伴！舊客戶的穩定續約與轉介紹是你的業績基石。建議可建立定期的主動開發機制，讓業績規模更上一層樓！";
+        } else if (maxDim === "value") {
+            typeName = "🎙️ 專業說服【價值顧問型】";
+            desc = "<b>你的優勢：邏輯清晰、產品價值講得透徹、能打動關鍵決策者。</b><br><br>你非常懂得用效益、差異化優勢打動客戶，將產品價值發揮極致。若能在臨門一腳時更大膽地提出簽約要求，成交轉換率會更加驚人！";
+        } else {
+            typeName = "⚡ 臨門一腳【談判高手型】";
+            desc = "<b>你的優勢：敏銳捕捉成交訊號、談判議價能力強、簽單迅速。</b><br><br>你對客戶的購買意願與議價底線掌握極佳，非常擅長在臨門一腳促成合約落地！配合持續的名單開發，能創造極高的業績成長！";
+        }
+
+        document.getElementById('result-type').innerHTML = typeName;
+        document.getElementById('result-desc').innerHTML = desc;
+    }
+</script>
+
+</body>
+</html>
